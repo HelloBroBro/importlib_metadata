@@ -33,7 +33,7 @@ from contextlib import suppress
 from importlib import import_module
 from importlib.abc import MetaPathFinder
 from itertools import starmap
-from typing import Iterable, List, Mapping, Optional, Set, cast
+from typing import Any, Iterable, List, Mapping, Match, Optional, Set, cast
 
 __all__ = [
     'Distribution',
@@ -175,12 +175,12 @@ class EntryPoint:
     def __init__(self, name: str, value: str, group: str) -> None:
         vars(self).update(name=name, value=value, group=group)
 
-    def load(self):
+    def load(self) -> Any:
         """Load the entry point from its definition. If only a module
         is indicated by the value, return that module. Otherwise,
         return the named object.
         """
-        match = self.pattern.match(self.value)
+        match = cast(Match, self.pattern.match(self.value))
         module = import_module(match.group('module'))
         attrs = filter(None, (match.group('attr') or '').split('.'))
         return functools.reduce(getattr, attrs, module)
@@ -275,7 +275,7 @@ class EntryPoints(tuple):
         """
         return '%s(%r)' % (self.__class__.__name__, tuple(self))
 
-    def select(self, **params):
+    def select(self, **params) -> EntryPoints:
         """
         Select entry points from self that match the
         given parameters (typically group and/or name).
@@ -377,9 +377,9 @@ class Distribution(DeprecatedNonAbstract):
         - METADATA: The distribution metadata including fields
           like Name and Version and Description.
         - entry_points.txt: A series of entry points as defined in
-          `this spec <https://packaging.python.org/en/latest/specifications/entry-points/#file-format>`_.
+          `the entry points spec <https://packaging.python.org/en/latest/specifications/entry-points/#file-format>`_.
         - RECORD: A record of files according to
-          `this spec <https://packaging.python.org/en/latest/specifications/recording-installed-packages/#the-record-file>`_.
+          `this recording spec <https://packaging.python.org/en/latest/specifications/recording-installed-packages/#the-record-file>`_.
 
         A package may provide any set of files, including those
         not listed here or none at all.
@@ -769,6 +769,7 @@ class Lookup:
     """
     A micro-optimized class for searching a (fast) path for metadata.
     """
+
     def __init__(self, path: FastPath):
         """
         Calculate all of the children representing metadata.
