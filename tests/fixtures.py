@@ -9,7 +9,8 @@ import textwrap
 import functools
 import contextlib
 
-from .py39compat import FS_NONASCII
+from .compat.py312 import import_helper
+from .compat.py39 import os_helper
 
 from . import _path
 from ._path import FilesSpec
@@ -84,6 +85,7 @@ class OnSysPath(Fixtures):
     def setUp(self):
         super().setUp()
         self.fixtures.enter_context(self.add_sys_path(self.site_dir))
+        self.fixtures.enter_context(import_helper.isolated_modules())
 
 
 class SiteBuilder(SiteDir):
@@ -335,7 +337,9 @@ def record_names(file_defs):
 
 class FileBuilder:
     def unicode_filename(self):
-        return FS_NONASCII or self.skip("File system does not support non-ascii.")
+        return os_helper.FS_NONASCII or self.skip(
+            "File system does not support non-ascii."
+        )
 
 
 def DALS(str):
