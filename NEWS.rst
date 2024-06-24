@@ -1,3 +1,22 @@
+v8.0.0
+======
+
+Deprecations and Removals
+-------------------------
+
+- Message.__getitem__ now raises a KeyError on missing keys. (#371)
+- Removed deprecated support for Distribution subclasses not implementing abstract methods.
+
+
+v7.2.1
+======
+
+Bugfixes
+--------
+
+- When reading installed files from an egg, use ``relative_to(walk_up=True)`` to honor files installed outside of the installation root. (#455)
+
+
 v7.2.0
 ======
 

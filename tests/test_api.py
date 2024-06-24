@@ -1,9 +1,7 @@
 import re
 import textwrap
 import unittest
-import warnings
 import importlib
-import contextlib
 
 from . import fixtures
 from importlib_metadata import (
@@ -18,17 +16,11 @@ from importlib_metadata import (
 )
 
 
-@contextlib.contextmanager
-def suppress_known_deprecation():
-    with warnings.catch_warnings(record=True) as ctx:
-        warnings.simplefilter('default', category=DeprecationWarning)
-        yield ctx
-
-
 class APITests(
     fixtures.EggInfoPkg,
     fixtures.EggInfoPkgPipInstalledNoToplevel,
     fixtures.EggInfoPkgPipInstalledNoModules,
+    fixtures.EggInfoPkgPipInstalledExternalDataFiles,
     fixtures.EggInfoPkgSourcesFallback,
     fixtures.DistInfoPkg,
     fixtures.DistInfoPkgWithDot,
@@ -156,13 +148,13 @@ class APITests(
         resolved = version('importlib-metadata')
         assert re.match(self.version_pattern, resolved)
 
-    def test_missing_key_legacy(self):
+    def test_missing_key(self):
         """
-        Requesting a missing key will still return None, but warn.
+        Requesting a missing key raises KeyError.
         """
         md = metadata('distinfo-pkg')
-        with suppress_known_deprecation():
-            assert md['does-not-exist'] is None
+        with self.assertRaises(KeyError):
+            md['does-not-exist']
 
     def test_get_key(self):
         """
