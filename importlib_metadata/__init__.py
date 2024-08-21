@@ -1,24 +1,28 @@
 from __future__ import annotations
 
-import os
-import re
 import abc
-import sys
-import json
-import zipp
+import collections
 import email
-import types
-import inspect
-import pathlib
-import operator
-import textwrap
 import functools
 import itertools
+import json
+import operator
+import os
+import pathlib
 import posixpath
-import collections
+import re
+import sys
+import textwrap
+import types
+from contextlib import suppress
+from importlib import import_module
+from importlib.abc import MetaPathFinder
+from itertools import starmap
+from typing import Any, Iterable, List, Mapping, Match, Optional, Set, cast
+
+from zipp.compat.overlay import zipfile
 
 from . import _meta
-from .compat import py39, py311
 from ._collections import FreezableDefaultDict, Pair
 from ._compat import (
     NullFinder,
@@ -27,12 +31,7 @@ from ._compat import (
 from ._functools import method_cache, pass_none
 from ._itertools import always_iterable, bucket, unique_everseen
 from ._meta import PackageMetadata, SimplePath
-
-from contextlib import suppress
-from importlib import import_module
-from importlib.abc import MetaPathFinder
-from itertools import starmap
-from typing import Any, Iterable, List, Mapping, Match, Optional, Set, cast
+from .compat import py39, py311
 
 __all__ = [
     'Distribution',
@@ -769,7 +768,7 @@ class FastPath:
         return []
 
     def zip_children(self):
-        zip_path = zipp.Path(self.root)
+        zip_path = zipfile.Path(self.root)
         names = zip_path.root.namelist()
         self.joinpath = zip_path.joinpath
 
@@ -1106,11 +1105,10 @@ def _get_toplevel_name(name: PackagePath) -> str:
     >>> _get_toplevel_name(PackagePath('foo.dist-info'))
     'foo.dist-info'
     """
-    return _topmost(name) or (
-        # python/typeshed#10328
-        inspect.getmodulename(name)  # type: ignore
-        or str(name)
-    )
+    # Defer import of inspect for performance (python/cpython#118761)
+    import inspect
+
+    return _topmost(name) or inspect.getmodulename(name) or str(name)
 
 
 def _top_level_inferred(dist):
