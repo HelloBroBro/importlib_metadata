@@ -14,7 +14,6 @@ import collections
 import email
 import functools
 import itertools
-import json
 import operator
 import os
 import pathlib
@@ -28,8 +27,6 @@ from importlib import import_module
 from importlib.abc import MetaPathFinder
 from itertools import starmap
 from typing import Any, Iterable, List, Mapping, Match, Optional, Set, cast
-
-from zipp.compat.overlay import zipfile
 
 from . import _meta
 from ._collections import FreezableDefaultDict, Pair
@@ -66,7 +63,7 @@ class PackageNotFoundError(ModuleNotFoundError):
         return f"No package metadata was found for {self.name}"
 
     @property
-    def name(self) -> str:  # type: ignore[override]
+    def name(self) -> str:  # type: ignore[override] # make readonly
         (name,) = self.args
         return name
 
@@ -284,7 +281,7 @@ class EntryPoints(tuple):
 
     __slots__ = ()
 
-    def __getitem__(self, name: str) -> EntryPoint:  # type: ignore[override]
+    def __getitem__(self, name: str) -> EntryPoint:  # type: ignore[override] # Work with str instead of int
         """
         Get the EntryPoint in self matching name.
         """
@@ -675,6 +672,9 @@ class Distribution(metaclass=abc.ABCMeta):
         return self._load_json('direct_url.json')
 
     def _load_json(self, filename):
+        # Deferred for performance (python/importlib_metadata#503)
+        import json
+
         return pass_none(json.loads)(
             self.read_text(filename),
             object_hook=lambda data: types.SimpleNamespace(**data),
@@ -777,6 +777,9 @@ class FastPath:
         return []
 
     def zip_children(self):
+        # deferred for performance (python/importlib_metadata#502)
+        from zipp.compat.overlay import zipfile
+
         zip_path = zipfile.Path(self.root)
         names = zip_path.root.namelist()
         self.joinpath = zip_path.joinpath
